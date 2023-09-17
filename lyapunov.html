@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Fractales de Lyapunov</title>
+		<style>
+			.Titre{													text-align: center;	font-size: 140%;							}
+			.Bloc{		border: solid 1px black;							float: left;						background-color: #ccc;		}
+			.Bouton{		padding: 10px 40px;	width: 60%;	margin-top: 5px;	text-align: left;	font-size: 100%;							}
+			.Bouton7{		padding: 10px 20px;	width: 71px;	margin-top: 5px;	text-align: center;	font-size:  80%;							}
+			.Bouton73{	padding: 10px 20px;	width: 213px;	margin-top: 5px;	text-align: center;	font-size:  80%;							}
+			.BoutonInactif{padding: 10px 40px;	width: 60%;	margin-top: 5px;	text-align: left;	font-size: 100%;	background-color: #555555;	}
+			.Menu{		padding: 10px 20px;	width: 45%;	margin-top: 5px;	text-align: center;	font-size: 100%;							}
+			.MenuEntiers{	padding: 10px 20px;	width: 15%;	margin: 0px;		text-align: center;	font-size: 100%;							}
+			#Commandes{																font-size: 100%;							}
+			#Informations{																font-size: 100%;							}
+		</style>
+		<script>
+			var FRACTALE =					{};
+			
+			initialiser()
+			
+			//	Fonctions Modèle
+			function initialiser() {
+				FRACTALE.listeSequences =											
+					['AB',		'BA',											// 2 lettres
+																				
+					 'AAB',		'ABA',		'BAA',								// 3 lettres : 2 A 1 B
+																				
+					 'AAAB',		'AABA',		'ABAA',		'BAAA',					// 4 lettres : 3 A 1 B
+																				
+					 'AABB',		'ABAB',		'BAAB',								// 4 lettres : 2 A 2 B
+					 'BBAA',		'BABA',		'ABBA',								
+																				
+					 'AAAAB',		'AAABA',		'AABAA',		'ABAAA',		'BAAAA',		// 5 lettres : 4 A 1 B
+																				
+					 'AAABB',		'AABAB',		'ABAAB',		'BAAAB',					// 5 lettres : 3 A 2 B
+					 'BBAAA',		'BABAA',		'BAABA',								
+					 'AABBA',		'ABBAA',											
+																				
+					 'AAAAAAAB',	'AAAAAABA',	'AAAAABAA',	'AAAABAAA',				// 8 lettres : 7 A 1 B
+					 'BAAAAAAA',	'ABAAAAAA',	'AABAAAAA',	'AAABAAAA',				
+																				
+					 'AAAABBBB',	'AAABBABB',	'AABBAABB',	'ABBAAABB',	'BBAAAABB'	// 8 lettres : 4 A 4 B
+					 ];
+				
+				FRACTALE.tableauSequences =														
+					[['AB',	'BA',	'',		'',		'',		''		],	// 2 lettres
+																	
+					 ['AAB',	'ABA',	'BAA',	'',		'',		''		],	// 3 lettres : 2 A 1 B
+																	
+					 ['AAAB',	'AABA',	'ABAA',	'BAAA',	'',		''		],	// 4 lettres : 3 A 1 B
+					 ['AABB',	'ABBA',	'BBAA',	'ABAB',	'BABA',	'BAAB'	],	// 4 lettres : 2 A 2 B
+																			
+					 ['AAAAB', 'AAABA',	'AABAA',	'ABAAA',	'BAAAA',	''		],	// 5 lettres : 4 A 1 B
+					 ['AAABB', 'AABBA',	'ABBAA',	'BBAAA',	'',		'BAAAB'	],	// 5 lettres : BB & BAAAB
+					 ['AABAB', 'ABABA',	'BABAA',	'',		'ABAAB',	'BAABA'	]];	// 5 lettres : BAB & BAAAB
+				
+				FRACTALE.typeSequence =		1;
+				FRACTALE.sequence =			FRACTALE.listeSequences[1];
+				
+				FRACTALE.maximumIterations =	200;
+				FRACTALE.taille =			575;
+				FRACTALE.grossissement =		2;
+				
+				FRACTALE.aMinDefaut =		0.0;
+				FRACTALE.aMaxDefaut =		4.0;
+				FRACTALE.bMinDefaut =		0.0;
+				FRACTALE.bMaxDefaut =		4.0;
+				
+				FRACTALE.aMin =			FRACTALE.aMinDefaut;
+				FRACTALE.aMax =			FRACTALE.aMaxDefaut;
+				FRACTALE.bMin =			FRACTALE.bMinDefaut;
+				FRACTALE.bMax =			FRACTALE.bMaxDefaut;
+				
+				FRACTALE.codeNuancier =		'41';
+				FRACTALE.couleursRVB =	    [[512, 512, 512],			// 0: Blanc
+										[256, 128,   0],			// 1: Jaune
+										[  0, 512,   0],			// 2: Vert
+										[  0,   0, 512],			// 3: Bleu
+										[512,   0, 512],			// 4: Violet
+										[512,   0,   0],			// 5: Rouge
+										[256, 256, 256]];			// 6: Gris
+				FRACTALE.couleursHEX =	    ['#ffffff',				// 0: Blanc
+										'#ffff00',				// 1: Jaune
+										'#00ff00',				// 2: Vert
+										'#0000ff',				// 3: Bleu
+										'#ff00ff',				// 4: Violet
+										'#ff0000',				// 5: Rouge
+										'#777777'	];				// 6: Gris				
+				
+				FRACTALE.codeNuancier =		'25';
+				
+				FRACTALE.ligneCourante;
+				FRACTALE.colonneCourante;
+				FRACTALE.DUREE =			5;
+			}
+			function donnerExposantLyapunov(x, y) {
+				let coefficientA =			(FRACTALE.aMax + FRACTALE.aMin)/2 + (FRACTALE.aMax - FRACTALE.aMin)/2*x/FRACTALE.taille;
+			//	let coefficientB =			(FRACTALE.bMax + FRACTALE.bMin)/2 + (FRACTALE.bMax - FRACTALE.bMin)/2*y/FRACTALE.taille;
+				let coefficientB =			(FRACTALE.bMax + FRACTALE.bMin)/2 + (FRACTALE.bMax - FRACTALE.bMin)/2*( 1 - y/FRACTALE.taille );
+				
+				let r =					1;
+				let z =					0.5;
+				let sommeCourante =			0.0;
+				
+				for ( var n = 0; n < FRACTALE.maximumIterations; n++ ) {
+					let lettre =			FRACTALE.sequence[n % FRACTALE.sequenceLongueur];
+					if ( lettre === 'A') {	r = coefficientA } 
+					if ( lettre === 'B') {	r = coefficientB }
+					z =					r * z * (1.0 - z);
+					sommeCourante +=		Math.log(Math.abs(r * (1.0 - 2.0*z)));
+				}
+				exposantLyapunov =			sommeCourante/FRACTALE.maximumIterations;
+				
+				return exposantLyapunov;
+			}
+			
+			//	Fonctions Vues
+			function donnerCouleur(exposant) {
+				let couleur =				[0, 0, 0];
+				let intensite =			Math.abs(exposant)/2.0;
+				
+				if ( exposant < 0.0 ) {		// exposant de Lyapunov négatif : stable
+					couleur =				[parseInt(intensite*FRACTALE.couleurStable[0]), 
+										 parseInt(intensite*FRACTALE.couleurStable[1]), 
+										 parseInt(intensite*FRACTALE.couleurStable[2])];
+				} else {					// exposant de Lyapunov positif : chaotique > instable
+					couleur =				[parseInt(intensite*FRACTALE.couleurInstable[0]), 
+										 parseInt(intensite*FRACTALE.couleurInstable[1]), 
+										 parseInt(intensite*FRACTALE.couleurInstable[2])];
+				}
+				
+				return couleurRGB =			'rgb(' + couleur[0] + ',' + couleur[1] + ',' + couleur[2] + ')';
+			}
+			function tracerFractale() {
+				let canevas =				document.getElementById('Canevas');
+				canevas.width =			FRACTALE.taille;
+				canevas.height =			FRACTALE.taille;
+				
+				let contexte =				canevas.getContext('2d');
+				
+				FRACTALE.sequenceLongueur =	FRACTALE.sequence.length;
+				
+				tempsDebut =				new Date().getTime()
+				
+				for ( var x = 1; x <= FRACTALE.taille; x++ ) {
+				for ( var y = 1; y <= FRACTALE.taille; y++ ) {
+					contexte.strokeStyle =	donnerCouleur(donnerExposantLyapunov(x, y));
+					contexte.beginPath()
+					contexte.moveTo(x, y);
+					contexte.lineTo(x + 1, y + 1);
+					contexte.stroke()
+				}
+				}
+				
+				tempsFin =				new Date().getTime()
+				FRACTALE.tempsCalcul =		tempsFin - tempsDebut;
+			}
+			
+			//	Fonctions Contrôleurs
+			function initialiserInterface() {
+				FRACTALE.canevas =			document.getElementById('Canevas')
+				
+				FRACTALE.contexte =			FRACTALE.canevas.getContext('2d');
+				
+				let menu1 =				document.getElementById('MenuSequences1');
+				
+				for ( var l = 0; l < FRACTALE.listeSequences.length; l++ ) {
+					let choix =			document.createElement('OPTION');
+					
+					choix.value =			FRACTALE.listeSequences[l];
+					choix.innerHTML =		FRACTALE.listeSequences[l];
+					if ( l == 0 ) {
+						choix.selected =	'selected';
+					}
+					choix.onclick =		function() { actualiserFonction(this.innerHTML) }
+					
+					menu1.appendChild(choix);
+				}
+				
+				let table1 =				document.getElementById('PaveSequences2');
+				
+				for ( var c = 1; c <= FRACTALE.tableauSequences[0].length; c++ ) {
+					let ligne =			document.createElement('tr');
+					
+					for ( var l = 1; l <= FRACTALE.tableauSequences.length; l ++ ) {
+						let cellule =		document.createElement('td');
+					
+						let valeur =		FRACTALE.tableauSequences[l - 1][c - 1];
+						
+					if ( valeur != '' ) {
+						let bouton =		document.createElement('button');
+						
+						bouton.className =	'Bouton7';
+						bouton.innerHTML =	valeur;
+						
+						bouton.onclick =	function() { actualiserFonction(this.innerHTML) }
+						
+						cellule.append(bouton)
+					}
+						ligne.append(cellule)
+					}
+					table1.append(ligne)
+				}
+				
+//				let table2 =				document.getElementById('PaveSequences3');
+//				
+//					let ligne =			document.createElement('tr');
+//						let cellule =		document.createElement('td');
+//						
+//						let bouton =		document.createElement('button');
+//						
+//						bouton.className =	'Bouton7';
+//						bouton.innerHTML =	'*A';
+//						
+//						cellule.append(bouton)
+//						
+//						ligne.append(cellule)
+//						
+//						let cellule2 =		document.createElement('td');
+//						
+//						let bouton2 =		document.createElement('button');
+//						
+//						bouton2.className =	'Bouton7';
+//						bouton2.innerHTML =	'A*';
+//						
+//						cellule2.append(bouton2)
+//						
+//						ligne.append(cellule2)
+//					
+//					table2.append(ligne)
+				
+				document.getElementById('CartoucheSequence').innerHTML = FRACTALE.sequence;
+				
+				changerTypeSequence(FRACTALE.typeSequence)
+				
+				let menu2 =				document.getElementById('Iterations');
+				menu2.value =				FRACTALE.maximumIterations;
+				
+				let menu3 =				document.getElementById('Taille');
+				menu3.value =				FRACTALE.taille;
+				
+				let menu4 =				document.getElementById('Grossissement');
+				menu4.value =				FRACTALE.grossissement;
+				
+				let table3 =				document.getElementById('Nuancier1');
+				
+				for ( var l = 1; l <= FRACTALE.couleursHEX.length; l ++ ) {
+					let ligne =			document.createElement('tr');
+					
+					for ( var c = 1; c <= FRACTALE.couleursHEX.length; c++ ) {
+						let cellule =		document.createElement('td');
+					
+					if ( c != l ) {
+						let bouton =		document.createElement('button');
+						
+						bouton.className =	'Bouton7';
+						bouton.innerHTML =	'&#9679;';
+						bouton.style.color = FRACTALE.couleursHEX[l - 1];
+						bouton.style.background = FRACTALE.couleursHEX[c - 1];
+						
+						bouton.codeNuancier = l.toString() + c.toString()
+						bouton.onclick =	function() { actualiserNuancier(this.codeNuancier) }
+						
+						cellule.append(bouton)
+					}
+						ligne.append(cellule)
+					}
+					table3.append(ligne)
+				}
+				
+				actualiserNuancier(FRACTALE.codeNuancier)
+			}
+			
+			function actualiserFonction(sequence) {
+				FRACTALE.sequence =			sequence;
+				
+				lireMenus()
+				
+				tracerFractale()
+				
+				actualiserInterface()
+			}
+			function actualiserFonction3() {
+				lireMenus()
+				
+				tracerFractale()
+				
+				actualiserInterface()
+			}
+			function actualiserParametres() {
+				lireMenus()
+				
+				tracerFractale()
+				
+				actualiserInterface()
+			}			
+			function actualiserNuancier(codeNuancier) {
+				couleur1 =				parseInt(codeNuancier.slice(0, 1));
+				couleur2 =				parseInt(codeNuancier.slice(1, 2));
+				
+				FRACTALE.couleurStable =		FRACTALE.couleursRVB[couleur1 - 1];
+				FRACTALE.couleurInstable =	FRACTALE.couleursRVB[couleur2 - 1];
+				
+				lireMenus()
+				
+				tracerFractale()
+				
+				actualiserInterface()
+			}
+			function cliquer(e) {
+				lireMenus()
+				
+				let aMin =				FRACTALE.aMin;
+				let aMax =				FRACTALE.aMax;
+				let bMin =				FRACTALE.bMin;
+				let bMax =				FRACTALE.bMax;
+				
+				let aCentre =				aMin + ( aMax - aMin )*e.offsetX/FRACTALE.taille;
+				let bCentre =				bMin + ( bMax - bMin )*e.offsetY/FRACTALE.taille;
+				let largeur =				0;
+				let hauteur =				0;
+				
+				let facteur =				1;
+				
+				if ( e.shiftKey ) {	facteur =	FRACTALE.grossissement	}
+				else {			facteur =	1/FRACTALE.grossissement	}
+				
+				largeur =					(aMax - aMin)*facteur;
+				hauteur =					(bMax - bMin)*facteur;
+				
+				FRACTALE.aMin =			aCentre - largeur/2;
+				FRACTALE.aMax =			aCentre + largeur/2;
+				FRACTALE.bMin =			bCentre - hauteur/2;
+				FRACTALE.bMax =			bCentre + hauteur/2;
+				
+				tracerFractale()
+				
+				actualiserInterface()
+			}
+			function doubleCliquer() {
+				lireMenus()
+				
+				FRACTALE.aMin =			FRACTALE.aMinDefaut;
+				FRACTALE.aMax =			FRACTALE.aMaxDefaut;
+				FRACTALE.bMin =			FRACTALE.bMinDefaut;
+				FRACTALE.bMax =			FRACTALE.bMaxDefaut;
+				
+				tracerFractale()
+				
+				actualiserInterface()
+			}
+			
+			function ajouterAGauche() {
+				FRACTALE.sequence =			'A'+ FRACTALE.sequence;
+				document.getElementById('CartoucheSequence').innerHTML = FRACTALE.sequence;
+			}
+			function ajouterADroite() {
+				FRACTALE.sequence =			FRACTALE.sequence + 'A';
+				document.getElementById('CartoucheSequence').innerHTML = FRACTALE.sequence;
+			}
+			function ajouterBGauche() {
+				FRACTALE.sequence =			'B'+ FRACTALE.sequence;
+				document.getElementById('CartoucheSequence').innerHTML = FRACTALE.sequence;
+			}
+			function ajouterBDroite() {
+				FRACTALE.sequence =			FRACTALE.sequence + 'B';
+				document.getElementById('CartoucheSequence').innerHTML = FRACTALE.sequence;
+			}
+			function retrancherGauche() {
+				if ( FRACTALE.sequence.length > 1 ) {
+					FRACTALE.sequence =		FRACTALE.sequence.slice(1, FRACTALE.sequence.length);
+				}
+				document.getElementById('CartoucheSequence').innerHTML = FRACTALE.sequence;
+			}
+			function retrancherDroite() {
+				if ( FRACTALE.sequence.length > 1 ) {
+					FRACTALE.sequence =		FRACTALE.sequence.slice(0, FRACTALE.sequence.length - 1);
+				}
+				document.getElementById('CartoucheSequence').innerHTML = FRACTALE.sequence;
+			}
+			function permuterAB() {
+				FRACTALE.sequencePermutee =	'';
+				
+				for ( var n = 0; n < FRACTALE.sequence.length; n++ ) {
+					if ( FRACTALE.sequence[n] == 'A' ) { FRACTALE.sequencePermutee += 'B' }
+					if ( FRACTALE.sequence[n] == 'B' ) { FRACTALE.sequencePermutee += 'A' }
+				}
+				FRACTALE.sequence =			FRACTALE.sequencePermutee;
+				
+				document.getElementById('CartoucheSequence').innerHTML = FRACTALE.sequence;
+			}
+			function inverser() {
+				FRACTALE.sequenceInversee =	'';
+				
+				for ( var n = 0; n < FRACTALE.sequence.length; n++ ) {
+					FRACTALE.sequenceInversee =  FRACTALE.sequence[n] + FRACTALE.sequenceInversee;
+				}
+				FRACTALE.sequence =			FRACTALE.sequenceInversee;
+				
+				document.getElementById('CartoucheSequence').innerHTML = FRACTALE.sequence;
+			}			
+			
+			function actualiserInterface() {
+				document.getElementById('Titre').innerHTML = 'Ensemble de Lyapunov';
+				
+				let message =				'';
+				let sautDeLigne =			'<br>';
+				
+				message =					'Séquence génératrice : ';
+				message +=				FRACTALE.sequence;
+				message +=				sautDeLigne + sautDeLigne;
+				
+				message +=				'Re(z) &#8712; [ ' + FRACTALE.aMin + ' ; ' + FRACTALE.aMax + ' ]' + sautDeLigne;
+				message +=				'Im(z) &#8712; [ ' + FRACTALE.bMin + ' ; ' + FRACTALE.bMax + ' ]' + sautDeLigne;
+				
+				message +=				'Temps de calcul : ' + FRACTALE.tempsCalcul + ' ms';
+				
+				document.getElementById('Informations').innerHTML = message;
+				
+				
+				document.getElementById('CartoucheSequence').innerHTML = FRACTALE.sequence;
+			}
+			
+			function lireMenus() {
+				FRACTALE.maximumIterations =	parseInt(document.querySelector('#Iterations').value);
+				FRACTALE.taille =			parseInt(document.querySelector('#Taille').value);
+				FRACTALE.grossissement =		parseInt(document.querySelector('#Grossissement').value);
+				FRACTALE.nombrePoints =		FRACTALE.taille*FRACTALE.taille;				
+			}
+			
+			function changerTypeSequence(typeSequence) {
+				FRACTALE.typeSequence =		typeSequence;
+				
+				document.getElementById('TuileSequences1').style.display = 'none';
+				document.getElementById('TuileSequences2').style.display = 'none';
+				document.getElementById('TuileSequences3').style.display = 'none';
+				
+				if ( FRACTALE.typeSequence == 1 ) {
+					document.getElementById('BoutonSequence1').checked = 'checked'; 
+					document.getElementById('TuileSequences1').style.display = 'block';
+				}
+				if ( FRACTALE.typeSequence == 2 ) {
+					document.getElementById('BoutonSequence2').checked = 'checked'; 
+					document.getElementById('TuileSequences2').style.display = 'block';
+				}
+				if ( FRACTALE.typeSequence == 3 ) {
+					document.getElementById('BoutonSequence3').checked = 'checked'; 
+					document.getElementById('TuileSequences3').style.display = 'block';
+				}
+			}
+		</script>
+	</head>
+	
+	<body                                                                     onload='initialiserInterface()'>
+		<div class='Bloc'                                  id='Figure'> 
+			<canvas                                       id='Canevas'      onmousedown='cliquer(event)' ondblclick='doubleCliquer()'></canvas>
+		</div>
+		
+		<div class='Bloc' id='Commandes'>
+			<h2 class='Titre' id='Titre'>Fractales de Lyapunov</h2>
+			
+			<fieldset>
+				<div id='Informations'></div>
+			</fieldset>
+			
+			<fieldset>
+				<legend>Séquences génératrices</legend>
+				
+				<form>
+				<input type='radio'  name='TypeSequence' id='BoutonSequence1' onchange='changerTypeSequence(1)'>liste</input>
+				<input type='radio'  name='TypeSequence' id='BoutonSequence2' onchange='changerTypeSequence(2)'>2 à 5 lettres</input>
+				<input type='radio'  name='TypeSequence' id='BoutonSequence3' onchange='changerTypeSequence(3)'>composteur</input>
+				</form>
+				<div                 class='Tuile'       id='TuileSequences1'>
+					<select         class='Menu'        id='MenuSequences1'></select>
+				</div>
+				<div                 class='Tuile'       id='TuileSequences2'>
+					<table                              id='PaveSequences2'></table>
+				</div>
+				<div                 class='Tuile'       id='TuileSequences3'>
+					<table                              id='PaveSequences3'>
+						<tr>
+							<td><button class='Bouton7' onclick='ajouterAGauche()'>A*</button></td>
+							<td><button class='Bouton7' onclick='ajouterADroite()'>*A</button></td>
+							<td><button class='Bouton7' onclick='permuterAB()'>A&harr;B</button></td>
+							<!-- Séquence en cours à afficher -->
+							<td colspan='3'><span id='CartoucheSequence'></span></td>
+						</tr>
+						<tr>
+							<td><button class='Bouton7' onclick='ajouterBGauche()'>B*</button></td>
+							<td><button class='Bouton7' onclick='ajouterBDroite()'>*B</button></td>
+							<td></td>
+							<td></td>
+							<td></td>
+							<td></td>
+						</tr>
+						<tr>
+							<td><button class='Bouton7' onclick='retrancherGauche()'>X*</button></td>
+							<td><button class='Bouton7' onclick='retrancherDroite()'>*X</button></td>
+							<td><button class='Bouton7' onclick='inverser()'>&#8617;</button></td>
+							<td colspan='3'><button class='Bouton73' onclick='actualiserFonction3()'>Calculer</button></td>
+						</tr>
+					</table>
+				</div>
+			</fieldset>
+			
+			<fieldset>
+				<legend>Paramètres</legend>
+				
+				<input type='number' class='MenuEntiers' id='Iterations'   onchange='actualiserParametres()'></input>
+				<label>Maximum d'itérations <i>Précision</i></label>
+				<br>
+				
+				<input type='number' class='MenuEntiers' id='Taille'       onchange='actualiserParametres()'></input>
+				<label>Nombre de pixels <i>Taille</i></label>
+				<br>
+				
+				<input type='number' class='MenuEntiers' id='Grossissement'></input>
+				<label>Facteur de grossissement</label>
+			</fieldset>
+			
+			<fieldset>
+				<legend>Nuanciers</legend>
+				
+				<div                 class='Tuile'       id='TuileNuanciers1'>
+					<table                              id='Nuancier1'></table>
+				</div>
+			</fieldset>
+			
+			<fieldset>
+				<legend>Autres commandes</legend>
+				
+				Réduire la zone de calcul : Clic sur un point<br>
+				Agrandir la zone de calcul : MAJ + Clic sur un point<br>
+				Revenir à la zone de calcul par défaut : Clic + Clic
+			</fieldset>
+		</div>
+	</body>
+</html>
